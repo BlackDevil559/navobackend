@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strconv"
 	"time"
@@ -53,6 +54,12 @@ func addNewUser(user model.User){
 		panic(err)
 	}
 	fmt.Println("User is added successfully",inserted.InsertedID)
+	go func() {
+		subject := "Welcome to HungerPoint!"
+		body := fmt.Sprintf("Hello %s,\n\nThank you for joining us. We are excited to have you on board!", user.Name)
+		recipientEmail := user.Email
+		GeneralMailScript(subject, body, recipientEmail)
+	}()
 }
 
 func addNewFood(food model.Food){
@@ -150,7 +157,7 @@ func showFoodNearBy(userId string) ([]model.FoodWithUserInfo, error) {
 }
 
 
-func bookFooditem(foodId string, NumberServing string, consumerId string) {
+func bookFoodItem(foodId string, NumberServing string, consumerId string) {
     foodObjID, err := primitive.ObjectIDFromHex(foodId)
     if err != nil {
         panic(err)
@@ -161,6 +168,16 @@ func bookFooditem(foodId string, NumberServing string, consumerId string) {
     }
     var food model.Food
     err = collection2_food.FindOne(context.TODO(), bson.M{"_id": foodObjID}).Decode(&food)
+    if err != nil {
+        panic(err)
+    }
+    var producer model.User
+    err = collection1_user.FindOne(context.TODO(), bson.M{"_id": food.UserID}).Decode(&producer)
+    if err != nil {
+        panic(err)
+    }
+    var consumer model.User
+    err = collection1_user.FindOne(context.TODO(), bson.M{"_id": consumerObjID}).Decode(&consumer)
     if err != nil {
         panic(err)
     }
@@ -195,6 +212,23 @@ func bookFooditem(foodId string, NumberServing string, consumerId string) {
             panic(err)
         }
         fmt.Println("Order created successfully!")
+        go func() {
+            subject := "Order Confirmation"
+            body := fmt.Sprintf(
+                "Hello %s,\n\nThank you for your order! Here are the details:\n\nFood Item: %s\nProvider: %s\nProvider Address: %s\nNumber of Servings: %d\nTotal Price: %d\n\nEnjoy your meal!",
+                consumer.Name,
+                food.Title,
+                producer.Name,
+                producer.Address,
+                numServing,
+                numServing*food.Price,
+            )
+            recipientEmail := consumer.Email
+            err := GeneralMailScript(subject, body, recipientEmail)
+            if err != nil {
+                fmt.Printf("Failed to send confirmation email: %v\n", err)
+            }
+        }()
     } else {
         fmt.Println("Not enough servings available.")
     }
@@ -280,7 +314,18 @@ func addRating(orderId string, rating float64) {
 	if err != nil {
 		panic(fmt.Errorf("failed to update producer rating: %v", err))
 	}
-	fmt.Println("Rating added successfully")
+	go func() {
+		subject := "You've Received a New Rating!"
+		body := fmt.Sprintf(
+			"Hello %s,\n\nYou have received a new rating for your provided food item.\n\nRating: %.2f\nYour updated average rating: %.2f\n\nThank you for your service!\n",
+			producer.Name, rating, newRating,
+		)
+		err := GeneralMailScript(subject, body, producer.Email)
+		if err != nil {
+			fmt.Printf("Failed to send email to producer: %v\n", err)
+		}
+	}()
+	fmt.Println("Rating added successfully and notification sent to producer")
 }
 
 func showAllFood() ([]model.FoodWithUserInfo, error) {
@@ -366,7 +411,7 @@ func BookFooditem(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type","application/json")
 	w.Header().Set("Allow-Control-Allow-Methods","GET")
 	params:=mux.Vars(r)
-	bookFooditem(params["id"],params["ns"],params["consumerid"])
+	bookFoodItem(params["id"],params["ns"],params["consumerid"])
 	json.NewEncoder(w).Encode("Order Confirmed")
 	fmt.Println("Order Confirmed")
 }
@@ -413,7 +458,6 @@ func ShowAllFood(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
     w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-	// w.Header().Set("ngrok-skip-browser-warning", "any-value")
 	w.Header().Set("User-Agent","CustomUserAgent/1.0")
 	if r.Method == http.MethodOptions {
         w.WriteHeader(http.StatusOK)
@@ -428,3 +472,22 @@ func ShowAllFood(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("All food items with user info displayed")
 }
 
+func GeneralMailScript(subject, body, recipientEmail string) error {
+	email := os.Getenv("EMAIL")
+	password := os.Getenv("EMAIL_PASSWORD")
+	smtpServer := os.Getenv("SMTP_SERVER")
+	smtpPort := os.Getenv("SMTP_PORT")
+	auth := smtp.PlainAuth("", email, password, smtpServer)
+	msg := fmt.Sprintf("Subject: %s\n\n%s", subject, body)
+	err := smtp.SendMail(
+		fmt.Sprintf("%s:%s", smtpServer, smtpPort),
+		auth,
+		email,
+		[]string{recipientEmail},
+		[]byte(msg),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	return nil
+}
