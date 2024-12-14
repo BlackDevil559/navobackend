@@ -1,0 +1,106 @@
+{
+  "users": [
+    {
+      "_id": "64dcb60ffba2d42aa07e1f01",
+      "name": "Alice",
+      "phone": "+911234567891",
+      "email": "alice@example.com",
+      "password": "password123",
+      "latitude": 28.6139,
+      "longitude": 77.2090,
+      "address": "Connaught Place, Delhi",
+      "rating": 4.5
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e1f02",
+      "name": "Bob",
+      "phone": "+911234567892",
+      "email": "bob@example.com",
+      "password": "password123",
+      "latitude": 28.6145,
+      "longitude": 77.2100,
+      "address": "Rajiv Chowk, Delhi",
+      "rating": 4.7
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e1f03",
+      "name": "Charlie",
+      "phone": "+911234567893",
+      "email": "charlie@example.com",
+      "password": "password123",
+      "latitude": 28.6150,
+      "longitude": 77.2110,
+      "address": "Janpath, Delhi",
+      "rating": 4.6
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e1f04",
+      "name": "Diana",
+      "phone": "+911234567894",
+      "email": "diana@example.com",
+      "password": "password123",
+      "latitude": 28.6160,
+      "longitude": 77.2120,
+      "address": "Jantar Mantar, Delhi",
+      "rating": 4.8
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e1f05",
+      "name": "Eve",
+      "phone": "+911234567895",
+      "email": "eve@example.com",
+      "password": "password123",
+      "latitude": 28.6170,
+      "longitude": 77.2130,
+      "address": "India Gate, Delhi",
+      "rating": 4.9
+    }
+  ],
+  "foodItems": [
+    {
+      "_id": "64dcb60ffba2d42aa07e2f01",
+      "imageurl": "https://example.com/food1.jpg",
+      "title": "Pizza",
+      "description": "Cheese burst pizza",
+      "numberserving": 5,
+      "price": 250,
+      "userid": "64dcb60ffba2d42aa07e1f01"
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e2f02",
+      "imageurl": "https://example.com/food2.jpg",
+      "title": "Burger",
+      "description": "Chicken burger with fries",
+      "numberserving": 3,
+      "price": 150,
+      "userid": "64dcb60ffba2d42aa07e1f02"
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e2f03",
+      "imageurl": "https://example.com/food3.jpg",
+      "title": "Pasta",
+      "description": "Creamy Alfredo pasta",
+      "numberserving": 4,
+      "price": 200,
+      "userid": "64dcb60ffba2d42aa07e1f03"
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e2f04",
+      "imageurl": "https://example.com/food4.jpg",
+      "title": "Salad",
+      "description": "Fresh green salad",
+      "numberserving": 2,
+      "price": 100,
+      "userid": "64dcb60ffba2d42aa07e1f04"
+    },
+    {
+      "_id": "64dcb60ffba2d42aa07e2f05",
+      "imageurl": "https://example.com/food5.jpg",
+      "title": "Sushi",
+      "description": "Japanese sushi platter",
+      "numberserving": 6,
+      "price": 500,
+      "userid": "64dcb60ffba2d42aa07e1f05"
+    }
+  ]
+}
