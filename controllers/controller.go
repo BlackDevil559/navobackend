@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/smtp"
 	"os"
@@ -156,6 +157,10 @@ func showFoodNearBy(userId string) ([]model.FoodWithUserInfo, error) {
 	return nearbyFoods, nil
 }
 
+func generateOTP() string {
+    rand.Seed(time.Now().UnixNano())
+    return fmt.Sprintf("%06d", rand.Intn(1000000))
+}
 
 func bookFoodItem(foodId string, NumberServing string, consumerId string) {
     foodObjID, err := primitive.ObjectIDFromHex(foodId)
@@ -203,6 +208,7 @@ func bookFoodItem(foodId string, NumberServing string, consumerId string) {
             ID:         primitive.NewObjectID(),
             ConsumerID: consumerObjID,
             ProducerID: food.UserID,
+			FoodID: 	food.ID,
             IsRated:    false,
             Rating:     0.0,
             Timestamp:  time.Now(),
@@ -212,21 +218,39 @@ func bookFoodItem(foodId string, NumberServing string, consumerId string) {
             panic(err)
         }
         fmt.Println("Order created successfully!")
+        otp := generateOTP()
         go func() {
-            subject := "Order Confirmation"
-            body := fmt.Sprintf(
-                "Hello %s,\n\nThank you for your order! Here are the details:\n\nFood Item: %s\nProvider: %s\nProvider Address: %s\nNumber of Servings: %d\nTotal Price: %d\n\nEnjoy your meal!",
+            consumerSubject := "Order Confirmation"
+            consumerBody := fmt.Sprintf(
+                "Hello %s,\n\nThank you for your order! Here are the details:\n\nFood Item: %s\nProvider: %s\nProvider Address: %s\nNumber of Servings: %d\nTotal Price: %d\n\nYour OTP for this order is: %s\n\nEnjoy your meal!",
                 consumer.Name,
                 food.Title,
                 producer.Name,
                 producer.Address,
                 numServing,
                 numServing*food.Price,
+                otp,
             )
-            recipientEmail := consumer.Email
-            err := GeneralMailScript(subject, body, recipientEmail)
+            consumerEmail := consumer.Email
+            err := GeneralMailScript(consumerSubject, consumerBody, consumerEmail)
             if err != nil {
-                fmt.Printf("Failed to send confirmation email: %v\n", err)
+                fmt.Printf("Failed to send confirmation email to consumer: %v\n", err)
+            }
+            producerSubject := "New Order Notification"
+            producerBody := fmt.Sprintf(
+                "Hello %s,\n\nYou have received a new order! Here are the details:\n\nFood Item: %s\nConsumer: %s\nConsumer Address: %s\nNumber of Servings: %d\nTotal Bill: %d\n\nThe OTP for this order is: %s\n\nPlease prepare the order for pickup/delivery.",
+                producer.Name,
+                food.Title,
+                consumer.Name,
+                consumer.Address,
+                numServing,
+                numServing*food.Price,
+                otp,
+            )
+            producerEmail := producer.Email
+            err = GeneralMailScript(producerSubject, producerBody, producerEmail)
+            if err != nil {
+                fmt.Printf("Failed to send notification email to producer: %v\n", err)
             }
         }()
     } else {
@@ -246,7 +270,7 @@ func loginUser(phone string, password string) (model.User, error) {
 	return user,nil
 }
 
-func showAllOrder(userId string) ([]model.Order, error) {
+func showAllOrder(userId string) ([]map[string]interface{}, error) {
     userObjID, err := primitive.ObjectIDFromHex(userId)
     if err != nil {
         return nil, fmt.Errorf("invalid user ID: %v", err)
@@ -257,13 +281,34 @@ func showAllOrder(userId string) ([]model.Order, error) {
         return nil, fmt.Errorf("error fetching orders: %v", err)
     }
     defer cursor.Close(context.TODO())
-    var orders []model.Order
+    var orders []map[string]interface{}
     for cursor.Next(context.TODO()) {
         var order model.Order
         if err := cursor.Decode(&order); err != nil {
             return nil, fmt.Errorf("error decoding order: %v", err)
         }
-        orders = append(orders, order)
+        var food model.Food
+        err := collection2_food.FindOne(context.TODO(), bson.M{"_id": order.FoodID}).Decode(&food)
+        if err != nil {
+            return nil, fmt.Errorf("error fetching food details for order ID %s: %v", order.ID.Hex(), err)
+        }
+        var producer model.User
+        err = collection1_user.FindOne(context.TODO(), bson.M{"_id": order.ProducerID}).Decode(&producer)
+        if err != nil {
+            return nil, fmt.Errorf("error fetching producer details for order ID %s: %v", order.ID.Hex(), err)
+        }
+        orderDetails := map[string]interface{}{
+            "order_id":      order.ID.Hex(),
+            "food_title":    food.Title,
+            "food_desc":     food.Description,
+            "producer_name": producer.Name,
+            "producer_id":   order.ProducerID.Hex(),
+            "consumer_id":   order.ConsumerID.Hex(),
+            "order_date":    order.Timestamp,
+            "is_rated":      order.IsRated,
+            "rating":        order.Rating,
+        }
+        orders = append(orders, orderDetails)
     }
     if err := cursor.Err(); err != nil {
         return nil, fmt.Errorf("cursor error: %v", err)

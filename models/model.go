@@ -33,6 +33,7 @@ type Order struct {
 	ID          primitive.ObjectID `json:"_id" bson:"_id,omitempty"`          // Unique identifier for the order
 	ConsumerID  primitive.ObjectID `json:"consumer_id,omitempty"` // ID of the user who placed the order
 	ProducerID  primitive.ObjectID `json:"producer_id,omitempty"` // ID of the user providing the food
+	FoodID      primitive.ObjectID `json:"food_id,omitempty"`    // ID of the food which was ordered
 	IsRated     bool               `json:"is_rated,omitempty"`       // Whether the order has been rated
 	Rating      float64            `json:"rating"`          // Rating given for the order
 	Timestamp   time.Time          `json:"timestamp,omitempty"`                        // Time when the order was placed
