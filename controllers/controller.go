@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -535,4 +536,25 @@ func GeneralMailScript(subject, body, recipientEmail string) error {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 	return nil
+}
+
+func ShowImage(w http.ResponseWriter, r *http.Request) {
+	imageDir := "./images/"
+	imageName := r.URL.Query().Get("name")
+	if imageName == "" {
+		http.Error(w, "Image name is required", http.StatusBadRequest)
+		return
+	}
+	imagePath := filepath.Join(imageDir, imageName)
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		http.Error(w, "Image not found", http.StatusNotFound)
+		return
+	}
+	file, err := os.Open(imagePath)
+	if err != nil {
+		http.Error(w, "Unable to open image", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+	http.ServeFile(w, r, imagePath)
 }

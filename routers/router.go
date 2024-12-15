@@ -19,6 +19,7 @@ func Router() *mux.Router {
 	router.HandleFunc("/api/showallorder/{id}", controllers.ShowAllOrder).Methods("GET","OPTIONS")
 	router.HandleFunc("/api/addrating/{id}/{rating}", controllers.AddRating).Methods("PUT","OPTIONS")
 	router.HandleFunc("/api/showallfood", controllers.ShowAllFood).Methods("GET", "OPTIONS")
+	router.HandleFunc("/api/showimage",controllers.ShowImage).Methods("GET","OPTIONS")
 	return router
 }
 
