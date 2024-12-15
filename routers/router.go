@@ -27,7 +27,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow any origin, but you can specify a specific domain instead of "*"
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT",)
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
 		w.Header().Set("User-Agent","CustomUserAgent/1.0")
 		// If it's a preflight OPTIONS request, return a status 200 OK
